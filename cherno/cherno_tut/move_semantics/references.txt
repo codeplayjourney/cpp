@@ -1,0 +1,143 @@
+qn:
+why does const int& var take in r value as well while int & var2 only take in l value, I dont get the difference of const
+
+Great question—this is one of those C++ rules that feels weird until you see why it exists.
+🔑 The short answer
+int& (non-const reference) → can only bind to lvalues
+const int& → can bind to both lvalues and rvalues
+💡 Why?
+1. What’s the risk with non-const references?
+A non-const reference (int&) allows modification:
+int x = 10;
+int& ref = x;
+ref = 20;  // modifies x
+Now imagine binding it to an rvalue:
+int& ref = 5; // ❌ not allowed
+ref = 10;
+👉 Problem:
+5 is a temporary (rvalue). If C++ allowed this, you'd be modifying a temporary that is about to disappear. That’s unsafe and meaningless.
+
+2. Why const int& can bind to rvalues
+A const reference promises not to modify the value:
+const int& ref = 5; // ✅ allowed
+Why is this safe?
+You cannot modify the temporary:
+ref = 10; // ❌ error
+C++ extends the lifetime of the temporary to match the reference
+So internally, it’s like:
+const int& ref = 5;
+// temporary "5" now lives as long as ref
+👉 Since you’re only reading, not modifying, it’s safe.
+
+qn: then whats the point of a const ref to l value
+Benefits:
+1. 🚀 No copy for lvalues
+std::string str = "hello";
+foo(str);  // no copy
+2. 🔄 Works with rvalues too
+foo("hello");  // temporary binds to const ref
+👉 This is the big win: one function handles both cases efficiently.
+3. 🔒 Guarantees no modification
+Inside foo, you cannot accidentally change s:
+s += "world"; // ❌ compile error
+🤔 So what’s the “point” specifically for lvalues?
+For lvalues, const T& means:
+“I want to use your variable without copying it, and I promise not to modify it.”
+That’s extremely common in real code.
+
+qn: why not just const int ref = 5, why must it be by reference whats the diff
+🔑 Short answer
+You can do that—but it behaves very differently.
+const int ref = 5; → creates a new variable (a copy)
+const int& ref = 5; → binds to an existing object (no copy, extends lifetime)
+
+qn: why does this function return a String& instead of String I dont get it, also
+since its a reference why does it return a dereferenced version of this (*this)
+instead of just the reference itself (this)
+/*
+String& operator=(String&& other) noexcept {
+    std::cout << "Moved" << endl;
+    delete[] m_Data;
+    m_Size = other.m_Size;
+    mData = other.m_Data;
+
+    other.m_Size = 0;
+    other.m_Data = nullptr;
+}
+
+int main() {
+    String string = "hello";
+    String dest = std::move(string);
+    dest = std::move(dest);
+    return 0;
+}
+*/
+Two separate questions, both good ones.
+
+## Why `String&` not `String`?
+
+Returning by value would mean **copying** the object out of the function — which defeats the entire purpose of move semantics (avoiding copies). More importantly, it's the **convention** for all assignment operators:
+
+```cpp
+// This is the idiom for ALL assignment operators:
+String& operator=(String&& other) noexcept  // move assign
+String& operator=(const String& other)       // copy assign
+```
+
+The `String&` return enables **chained assignment**:
+```cpp
+a = b = c;  // b = c returns String&, then a = that ref
+```
+
+If you returned `String`, the chain would trigger an extra copy/move. Returning `String&` makes it zero-cost — you're just handing back a reference to the already-existing object.
+
+---
+
+## Why `*this` not `this`?
+
+`this` is a **pointer** (`String*`). `*this` **dereferences** it, giving you the actual `String` object. The function returns `String&` (a reference to a String), not `String*` (a pointer to a String), so:
+
+```cpp
+return this;   // ❌ returns String* — type mismatch
+return *this;  // ✅ returns the String object, which binds to String&
+```
+
+Think of it this way — the reference is created **at the call site** automatically when the caller receives your return value. Inside the function you just need to return the *thing itself*, and C++ handles wrapping it into a reference for the caller.
+
+---
+
+**tl;dr:** `String&` is the convention to avoid copies and enable chaining. `*this` is just how you get the object from the pointer — the `&` in the return type is the caller's concern, not yours inside the function body.
+
+qn: isnt & the address pointer
+
+Common confusion — `&` means **different things depending on context**:
+
+---
+
+**On the right side of an expression:**
+```cpp
+int* p = &x;  // & means "take the address of x" → gives a pointer
+```
+
+**In a type declaration (left side / return type / parameter):**
+```cpp
+String& ref = obj;        // & means "this is a reference type"
+String& operator=(...)    // & means "returns a reference"
+```
+
+---
+
+So `&` is **overloaded syntax** — it's either the address-of operator or the reference declarator depending on where it appears.
+
+The key difference between references and pointers:
+
+| | Pointer (`String*`) | Reference (`String&`) |
+|---|---|---|
+| Can be null | yes | no |
+| Can be reassigned | yes | no |
+| Needs dereferencing | yes (`*p`, `p->`) | no (use directly like the object) |
+| Syntax to get one | `&obj` | bind at declaration |
+
+A reference is essentially an **alias** — it's not a separate pointer variable, it just means "this name refers to that object." Under the hood the compiler often implements it as a pointer, but you never interact with it that way.
+
+So in `String& operator=(...)`, the `&` is declaring the return type as "a reference to a String", not an address. That's why inside the function you return `*this` (the object itself) — the `&` in the return type tells the compiler to hand it back as a reference rather than copying it.

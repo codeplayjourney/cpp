@@ -1,0 +1,9 @@
+note:
+if empty list before push, we affect front and back - therefore need 2 mutexes
+if only one element before try pop, we affect front and back - therefore need 2 mutexes, 1 for front 1 for back
+by using a dummy node, we maintain at least 1 node at any point in time, therefore we only need 1 mutex. We always know that back points to the dummy node
+ops with dummy node:
+pop: we pop the first node and shift front to point to first node->next
+push(new data): we change data to be the new data and make next point to new dummy node
+for push, we only need back mutex
+for pop, we need front and back mutex to check if the queue only contains dummy node (condition where front.get() == back)

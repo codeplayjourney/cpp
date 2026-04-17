@@ -1,0 +1,16 @@
+std::lock_guard (C++11):
+Purpose: Simple, single-mutex RAII wrapper
+
+std::scoped_lock (C++17):
+Purpose: Advanced RAII wrapper with deadlock avoidance
+
+std::unique_lock:
+can unlock and relock manually, deferred locking, condition vairables, movable. slightly slower performance
+
+Lock-free data structures:
+types of non-blocking data structures:
+obstruction-free
+lock-free
+wait-free
+Wiki: lock-freedom allows individual threads to starve but guarantees system-wide throughput
+cons: decrease overall performance, even though they reduce the time an individual thread spends waiting - cache ping pong, false sharing

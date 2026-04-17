@@ -1,0 +1,41 @@
+Initialisation:
+customers = 0
+mutex = Semaphore(1)
+customer = Semaphore(0)
+barber = Semaphore(0)
+customerDone = Semaphore(0)
+barberDone = Sempahore(0)
+
+Customer Pseudocode:
+wait(mutex)
+if (customer == n) {
+    signal(mutex)
+    exit()
+}
+
+customer++
+signal(mutex)
+wait(barber)
+signal(customer)
+getHairCut()
+signal(customerDone)
+wait(barberDone)
+
+wait(mutex)
+customer--
+signal(mutex)
+
+
+Barber Pseudoode:
+while (true) {
+    signal(barber)
+    wait(customer)
+    giveHairCut()
+    wait(customerDone)
+    signal(barberDone)
+}
+
+Note:
+We need both customerDone and barberDone for synchronisation, as we have both getHairCut() and giveHairCut().
+Imagine if we remove customerDone, barber could signal barberDone and loop back to signal(barber), making himself available
+for the next customer -- before the current customer has finished their getHairCut() call.

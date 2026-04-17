@@ -1,0 +1,23 @@
+Little book of semaphores:
+https://greenteapress.com/wp/semaphores/
+https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf
+
+https://howardhinnant.github.io/dining_philosophers.html
+c++ language feature allows to get both at same time:
+e.g. scoped_lock lock(get_left(pid), get_right(pid))
+
+## `std::lock_guard` vs `std::scoped_lock`
+
+__`std::lock_guard`__ (C++11):
+
+- Locks __one mutex__ at construction, unlocks at destruction
+- Simple RAII wrapper for single mutex
+- What I used in the current implementation
+
+__`std::scoped_lock`__ (C++17):
+
+- Can lock __multiple mutexes__ simultaneously using deadlock avoidance algorithm
+- Prevents deadlock when acquiring multiple locks
+- More powerful and safer for multi-mutex scenarios
+
+##

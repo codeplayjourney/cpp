@@ -1,0 +1,59 @@
+Pseudocode:
+#define N 5
+#define LEFT ((i+N-1)%N)
+#define RIGHT ((i+1)%N)
+#define THINKING 0
+#define HUNGRY 1
+#define EATING 2
+
+int state[N];
+Semaphore mutex = 1;
+// Each philosopher will have a semaphore
+Semaphore s[N];
+
+// high level overview:
+void philosopher(int i) {
+    while (TRUE) {
+        Think();
+        takeChopsticks(i);
+        Eat();
+        putChopsticks(i);
+    }
+}
+
+void takeChopsticks(i) {
+    wait(mutex);
+    // note: non-blocking in this critical section protected by mutex -
+    // important for preventing deadlocks
+    state[i] = HUNGRY;
+    safeToEat(i); // if philosopher can acquire the 2 chopsticks
+
+    signal(mutex);
+
+    wait(s[i]); // signal that it is safe to continue (that already achieved taking the chopstick)
+    // if blocked at wait(s[i]) if not available to take chopsticks, how to unblock:
+    // when the neighbours are done eating (putChopsticks called), it can call safeToEat(left) and safeToEat(right)
+}
+
+void safeToEat(i) {
+    // safe to eat if neighbours are not eating
+    if (state[i] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
+        state[i] = EATING;
+        signal(s[i]); // so lets say if neighbours are eating,
+        // there is no signal, and takechopsticks will be blocked at
+        // wait(s[i]) and will not exit yet - correct since takechopsticks
+        // have not been achieved therefore it should be blocked from
+        // returning successfully yet
+    }
+
+}
+
+void putChopsticks(i) {
+    wait(mutex); // creates a critical section
+    state[i] = THINKING;
+    safeToEat(left); // must safeToEat(left) and safeToEat(right) be done in a critical section to avoid rACE CONDITION?
+    // yes. state[] is a plain array, not atomic. Concurrent access without synchronization is a data race — undefined behaviour in C++
+    safeToEat(right);
+
+    signal(mutex);
+}
