@@ -36,7 +36,7 @@ void processing_thread() {
     }
     // print final order books before exiting
     for (auto& [symbol, book] : books) {
-        book.print(symbol.c_str()); // convert to c_str() because print() expects const char* not std::string
+        book.print(symbol.c_str()); // convert to c_str() because print() expects const char* not std::string, it returns an address but you don't print the address, you print what's at that address
     }
    
 }
