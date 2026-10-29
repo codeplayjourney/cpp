@@ -22,6 +22,17 @@ void ForEach(const std::vector<int> &values, void(*function)(int)) {
 
 int main() {
     void(*cherno)() = HelloWorld;
+    /*
+    Read it piece by piece:
+
+    void (*cherno)()
+    │     │       │
+    │     │       └── the parameter list: () means "takes no arguments"
+    │     └────────── (*cherno) means "cherno is a pointer"
+    └──────────────── void is the return type: "returns nothing"
+
+    Put together: "cherno is a pointer to a function that takes no arguments and returns void."
+    */
     cherno();
     typedef void(*HelloFunction)();
     HelloFunction function2 = HelloWorld;
